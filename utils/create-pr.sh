@@ -82,7 +82,11 @@ if [[ $(git status --porcelain | head -1) ]]; then
     git commit -m "deployment $DEPLOY_ID"
 
     echo "Push to the deploy branch $deploy_branch_name"
-    git push --set-upstream "$repo_url" "$deploy_branch_name"
+    if ! git push --set-upstream "$repo_url" "$deploy_branch_name"; then
+        echo "Push failed. Attempting to pull remote changes and rebase..."
+        git pull --rebase origin "$deploy_branch_name"
+        git push --set-upstream "$repo_url" "$deploy_branch_name"
+    fi
 
     # Create a pull request
     echo "Create a PR to $DEST_BRANCH"
