@@ -47,7 +47,7 @@ if git ls-remote --heads "$repo_url" "$DEST_BRANCH" | grep -q "$DEST_BRANCH"; th
 else
     echo "Branch $DEST_BRANCH does not exist. Cloning default branch and creating $DEST_BRANCH..."
     git clone "$repo_url" --depth 1
-    repo_name=$(basename "$repo_url" .git)  # Dynamically determine the repo directory name
+    repo_name=$(basename "$repo_url" .git)
     if [[ ! -d "$repo_name" ]]; then
         echo "Error: Repository directory '$repo_name' not found after cloning."
         exit 1
@@ -83,8 +83,12 @@ if [[ $(git status --porcelain | head -1) ]]; then
 
     echo "Push to the deploy branch $deploy_branch_name"
     if ! git push --set-upstream "$repo_url" "$deploy_branch_name"; then
-        echo "Push failed. Attempting to pull remote changes and rebase..."
-        git pull --rebase origin "$deploy_branch_name"
+        echo "Push failed. Attempting to pull and rebase remote changes..."
+        git fetch origin "$deploy_branch_name" || git fetch origin
+        git rebase origin/"$deploy_branch_name" || {
+            echo "Rebase failed. Please resolve conflicts manually.";
+            exit 1;
+        }
         git push --set-upstream "$repo_url" "$deploy_branch_name"
     fi
 
