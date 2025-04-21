@@ -8,7 +8,7 @@ on:
       - release/*
 
 permissions:
-  id-token: write  # Required for OIDC, safe to include even if not using OIDC
+  id-token: write  ## Required for OIDC, safe to include even if not using OIDC
   contents: read
 
 jobs:
