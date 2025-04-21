@@ -1,4 +1,3 @@
-
 name: CI_CD_Dev
 
 on:
@@ -8,7 +7,6 @@ on:
       - FluxV2
       - release/*
 
-
 jobs:
   Build_Push_Azure_Vote_App_Image:
     runs-on: ubuntu-latest
@@ -17,11 +15,13 @@ jobs:
       IMAGE_REPO_NAME: azvote      
     steps:
     - name: Checkout
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v4
+
     - name: Azure Login
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Create Frontend Image Tags
       env:
         SOURCE_LOCATION: src/azure-vote-front 
@@ -29,7 +29,7 @@ jobs:
         IMAGE_NAME: azure-vote-front
         TASKNAME: FRONTEND_IMAGE
         AZ_ACR_NAME: ${{ secrets.AZ_ACR_NAME }}   
-      uses: Azure/cli@1.0.4
+      uses: Azure/cli@v2
       with:
         inlineScript:  |
           chmod +x $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh
@@ -40,6 +40,7 @@ jobs:
                                                            -r $IMAGE_REPO_NAME/$IMAGE_NAME \
                                                            -t $TASKNAME \
                                                            -d $DOCKER_FILE
+
     - name: Create Backend Image Tags
       env:
         SOURCE_LOCATION: src/azure-vote-back
@@ -47,7 +48,7 @@ jobs:
         IMAGE_NAME: azure-vote-back
         TASKNAME: BACKEND_IMAGE
         AZ_ACR_NAME: ${{ secrets.AZ_ACR_NAME }}   
-      uses: Azure/cli@1.0.4
+      uses: Azure/cli@v2
       with:
         inlineScript:  |
           chmod +x $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh
@@ -58,21 +59,25 @@ jobs:
                                                            -r $IMAGE_REPO_NAME/$IMAGE_NAME \
                                                            -t $TASKNAME \
                                                            -d $DOCKER_FILE
+
     - name: Upload Image Tags
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: image_tags
         path: ${{ github.workspace }}/image_tags
+
     - name: Upload Manifests Templates
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: manifests
         path: ${{ github.workspace }}/azure-vote/manifests
+
     - name: Upload Utils
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: utils
         path: ${{ github.workspace }}/utils
+
   Deploy_to_Dev:
     name: "Deploy to Dev"
     runs-on: ubuntu-latest
@@ -80,43 +85,58 @@ jobs:
     environment: az-vote-app-dev
     steps:
     - name: Checkout
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v4
+
     - name: Download Image Tags
-      uses: actions/download-artifact@v2.0.8
+      uses: actions/download-artifact@v4
       with:
         name: image_tags
         path: ${{ github.workspace }}/image_tags
+
     - name: Download Manifests Templates
-      uses: actions/download-artifact@v2.0.8
+      uses: actions/download-artifact@v4
       with:
         name: manifests
         path: ${{ github.workspace }}/manifests
+
     - name: Download Utils
-      uses: actions/download-artifact@v2.0.8
+      uses: actions/download-artifact@v4
       with:
         name: utils
         path: ${{ github.workspace }}/utils
+
     - name: Read Image Tags
-      env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       run: |
-        for file in ${{ github.workspace }}/image_tags/*; do echo "::set-env name=${file##*/}::$(cat $file)"; done 
+        for file in ${{ github.workspace }}/image_tags/*; do
+          echo "$(basename $file)=$(cat $file)" >> $GITHUB_ENV
+        done 
+
     - name: Generate Manifests
       run: |
+        chmod +x ${{ github.workspace }}/utils/generate-manifests.sh
         ${{ github.workspace }}/utils/generate-manifests.sh manifests gen_manifests
       env:
         TARGET_NAMESPACE: ${{ secrets.TARGET_NAMESPACE }}
         VOTE_APP_TITLE: ${{ secrets.VOTE_APP_TITLE }}
         DEMO_APP_URL: ${{ secrets.DEMO_APP_URL }}
-        AZURE_VOTE_IMAGE_REPO: ${{ secrets.AZ_ACR_NAME }}/.azurecr.io/${{ env.IMAGE_REPO_NAME }}
+        AZURE_VOTE_IMAGE_REPO: ${{ secrets.AZ_ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPO_NAME }}
         SYSTEM_LABEL: ${{ secrets.SYSTEM_LABEL }}
+
     - name: Create PR
       run: |
-        # Extract release number from the branch name
-        # If it is a release branch, add a prefix to the manifests branch
-        echo $GITHUB_REF | awk -F"release/" '{print $2}' 
+        chmod +x ${{ github.workspace }}/utils/create-pr.sh
         release_number=$(echo $GITHUB_REF | awk -F"release/" '{print $2}')
-        [[ -z "$release_number" ]] || release_prefix=release/$release_number/  
+        if [[ -n "$release_number" ]]; then
+          release_prefix="release/$release_number/"
+        else
+          release_prefix=""
+        fi
 
-        ${{ github.workspace }}/utils/create-pr.sh -s ${{ github.workspace }}/gen_manifests -d ${{ secrets.MANIFESTS_FOLDER }} -r ${{ secrets.MANIFESTS_REPO }} -b $(echo $release_prefix)${{ secrets.MANIFESTS_BRANCH }} -i $GITHUB_RUN_ID -t ${{ secrets.PAT }} -e ${{ secrets.ENVIRONMENT_NAME }}        
-
+        ${{ github.workspace }}/utils/create-pr.sh \
+          -s ${{ github.workspace }}/gen_manifests \
+          -d ${{ secrets.MANIFESTS_FOLDER }} \
+          -r ${{ secrets.MANIFESTS_REPO }} \
+          -b "${release_prefix}${{ secrets.MANIFESTS_BRANCH }}" \
+          -i $GITHUB_RUN_ID \
+          -t ${{ secrets.PAT }} \
+          -e ${{ secrets.ENVIRONMENT_NAME }}
