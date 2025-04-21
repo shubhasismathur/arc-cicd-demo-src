@@ -35,18 +35,15 @@ jobs:
         IMAGE_NAME: azure-vote-front
         TASKNAME: FRONTEND_IMAGE
         AZ_ACR_NAME: ${{ secrets.AZ_ACR_NAME }}   
-      uses: Azure/cli@v2
-      with:
-        inlineScript: |
-          apk add --no-cache git
-          chmod +x $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh
-          $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh -f $SRC_FOLDER \
-                                                           -g $GITHUB_WORKSPACE \
-                                                           -s $SOURCE_LOCATION \
-                                                           -u $AZ_ACR_NAME \
-                                                           -r $IMAGE_REPO_NAME/$IMAGE_NAME \
-                                                           -t $TASKNAME \
-                                                           -d $DOCKER_FILE
+      run: |
+        chmod +x $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh
+        $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh -f $SRC_FOLDER \
+                                                         -g $GITHUB_WORKSPACE \
+                                                         -s $SOURCE_LOCATION \
+                                                         -u $AZ_ACR_NAME \
+                                                         -r $IMAGE_REPO_NAME/$IMAGE_NAME \
+                                                         -t $TASKNAME \
+                                                         -d $DOCKER_FILE
     - name: Create Backend Image Tags
       env:
         SOURCE_LOCATION: src/azure-vote-back
