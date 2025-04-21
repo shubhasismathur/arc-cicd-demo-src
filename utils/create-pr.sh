@@ -36,33 +36,22 @@ repo_url="${DEST_REPO#http://}"
 repo_url="${DEST_REPO#https://}"
 repo_url="https://automated:$TOKEN@$repo_url"
 
-# Clone the repository
-echo "Clone manifests repo"
-repo=${DEST_REPO##*/}
-repo_name=${repo%.*}
+# Always clone into a known directory to avoid directory name issues
+CLONE_DIR="repo-clone-dir"
 
 if git ls-remote --heads "$repo_url" "$DEST_BRANCH" | grep -q "$DEST_BRANCH"; then
     echo "Branch $DEST_BRANCH exists. Cloning..."
-    git clone "$repo_url" -b "$DEST_BRANCH" --depth 1 --single-branch
+    git clone "$repo_url" -b "$DEST_BRANCH" --depth 1 --single-branch "$CLONE_DIR"
 else
     echo "Branch $DEST_BRANCH does not exist. Cloning default branch and creating $DEST_BRANCH..."
-    git clone "$repo_url" --depth 1
-    repo_name=$(basename "$repo_url" .git)
-    if [[ ! -d "$repo_name" ]]; then
-        echo "Error: Repository directory '$repo_name' not found after cloning."
-        exit 1
-    fi
-    cd "$repo_name"
+    git clone "$repo_url" --depth 1 "$CLONE_DIR"
+    cd "$CLONE_DIR"
     git checkout -b "$DEST_BRANCH"
     git push --set-upstream origin "$DEST_BRANCH"
+    cd ..
 fi
 
-# Navigate to the cloned repository
-if [[ ! -d "$repo_name" ]]; then
-    echo "Error: Repository directory '$repo_name' not found."
-    exit 1
-fi
-cd "$repo_name"
+cd "$CLONE_DIR"
 
 # Create a new deployment branch
 deploy_branch_name="deploy/$DEPLOY_ID/$DEST_BRANCH"
