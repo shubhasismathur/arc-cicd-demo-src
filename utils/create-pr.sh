@@ -38,26 +38,25 @@ repo_url="https://automated:$TOKEN@$repo_url"
 
 # Clone the repository
 echo "Clone manifests repo"
+repo=${DEST_REPO##*/}
+repo_name=${repo%.*}
+
 if git ls-remote --heads "$repo_url" "$DEST_BRANCH" | grep -q "$DEST_BRANCH"; then
     echo "Branch $DEST_BRANCH exists. Cloning..."
     git clone "$repo_url" -b "$DEST_BRANCH" --depth 1 --single-branch
 else
     echo "Branch $DEST_BRANCH does not exist. Cloning default branch and creating $DEST_BRANCH..."
     git clone "$repo_url" --depth 1
-    repo=${DEST_REPO##*/}
-    repo_name=${repo%.*}
     cd "$repo_name"
     git checkout -b "$DEST_BRANCH"
     git push --set-upstream origin "$DEST_BRANCH"
 fi
 
 # Navigate to the cloned repository
-repo=${DEST_REPO##*/}
-repo_name=${repo%.*}
 cd "$repo_name"
 
 # Create a new deployment branch
-deploy_branch_name="deploy/$DEPLOY_ID/$BACKEND_IMAGE/$DEST_BRANCH"
+deploy_branch_name="deploy/$DEPLOY_ID/$DEST_BRANCH"
 echo "Create a new branch $deploy_branch_name"
 git checkout -b "$deploy_branch_name"
 
