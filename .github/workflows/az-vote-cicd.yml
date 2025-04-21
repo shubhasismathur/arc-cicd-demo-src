@@ -123,7 +123,7 @@ jobs:
         AZURE_VOTE_IMAGE_REPO: ${{ secrets.AZ_ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPO_NAME }}
         SYSTEM_LABEL: ${{ secrets.SYSTEM_LABEL }}
 
-    - name: Create PR
+        - name: Create PR
       run: |
         chmod +x ${{ github.workspace }}/utils/create-pr.sh
         release_number=$(echo $GITHUB_REF | awk -F"release/" '{print $2}')
