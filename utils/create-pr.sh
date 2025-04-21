@@ -47,12 +47,21 @@ if git ls-remote --heads "$repo_url" "$DEST_BRANCH" | grep -q "$DEST_BRANCH"; th
 else
     echo "Branch $DEST_BRANCH does not exist. Cloning default branch and creating $DEST_BRANCH..."
     git clone "$repo_url" --depth 1
+    repo_name=$(basename "$repo_url" .git)  # Dynamically determine the repo directory name
+    if [[ ! -d "$repo_name" ]]; then
+        echo "Error: Repository directory '$repo_name' not found after cloning."
+        exit 1
+    fi
     cd "$repo_name"
     git checkout -b "$DEST_BRANCH"
     git push --set-upstream origin "$DEST_BRANCH"
 fi
 
 # Navigate to the cloned repository
+if [[ ! -d "$repo_name" ]]; then
+    echo "Error: Repository directory '$repo_name' not found."
+    exit 1
+fi
 cd "$repo_name"
 
 # Create a new deployment branch
