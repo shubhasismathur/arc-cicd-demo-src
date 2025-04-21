@@ -7,6 +7,10 @@ on:
       - FluxV2
       - release/*
 
+permissions:
+  id-token: write  # Required for OIDC, safe to include even if not using OIDC
+  contents: read
+
 jobs:
   Build_Push_Azure_Vote_App_Image:
     runs-on: ubuntu-latest
