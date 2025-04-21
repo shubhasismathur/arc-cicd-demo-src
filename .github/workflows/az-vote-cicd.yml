@@ -37,7 +37,8 @@ jobs:
         AZ_ACR_NAME: ${{ secrets.AZ_ACR_NAME }}   
       uses: Azure/cli@v2
       with:
-        inlineScript:  |
+        inlineScript: |
+          apt-get update && apt-get install -y git
           chmod +x $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh
           $GITHUB_WORKSPACE/utils/buildContainerTemplate.sh -f $SRC_FOLDER \
                                                            -g $GITHUB_WORKSPACE \
@@ -46,7 +47,6 @@ jobs:
                                                            -r $IMAGE_REPO_NAME/$IMAGE_NAME \
                                                            -t $TASKNAME \
                                                            -d $DOCKER_FILE
-
     - name: Create Backend Image Tags
       env:
         SOURCE_LOCATION: src/azure-vote-back
