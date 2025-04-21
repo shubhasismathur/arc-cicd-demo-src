@@ -137,7 +137,7 @@ jobs:
           -s ${{ github.workspace }}/gen_manifests \
           -d ${{ secrets.MANIFESTS_FOLDER }} \
           -r ${{ secrets.MANIFESTS_REPO }} \
-          -b "${release_prefix}${{ secrets.MANIFESTS_BRANCH }}" \
+          -b "${release_prefix}${GITHUB_RUN_ID}/${{ secrets.ENVIRONMENT_NAME }}" \
           -i $GITHUB_RUN_ID \
           -t ${{ secrets.PAT }} \
           -e ${{ secrets.ENVIRONMENT_NAME }}
