@@ -63,11 +63,11 @@ echo "Copying manifests from $SOURCE_FOLDER to $DEST_FOLDER"
 mkdir -p "$DEST_FOLDER"
 cp -r "$SOURCE_FOLDER"/* "$DEST_FOLDER/"
 
-# Comment out the following lines to exclude templates/dev/azure-vote
-# if [ -d "$DEST_FOLDER/templates/dev/azure-vote" ]; then
-#     echo "Excluding $DEST_FOLDER/templates/dev/azure-vote from commit"
-#     rm -rf "$DEST_FOLDER/templates/dev/azure-vote"
-# fi
+# Exclude templates/dev/azure-vote from commit if it exists
+if [ -d "$DEST_FOLDER/templates/dev/azure-vote" ]; then
+    echo "Excluding $DEST_FOLDER/templates/dev/azure-vote from commit"
+    rm -rf "$DEST_FOLDER/templates/dev/azure-vote"
+fi
 
 git add -A
 git status
